@@ -90,13 +90,29 @@ func PostReqEmails(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// emails := map[string]string{
+		// 	"email1": post.Email,
+		// 	"emailx": "testx@gmail.com",
+		// 	"emaily": "testy@gmail.com",
+		// }
+
+		// emailEntries(post.Email)
+
+		var emailsSlice []string
+		entries := strings.Split(post.Email, ",")
+		for _, email := range entries {
+			emailsSlice = append(emailsSlice, email)
+		}
+
 		res := map[string]string{
 			"status": "Email Sent Succesfully!",
 			"email":  post.Email,
 			"text":   post.Text,
 		}
 
-		go sendExecute(post.Email, post.Text)
+		// go sendExecute(post.Email, post.Text)
+
+		go sendBulkEmails(emailsSlice, post.Text)
 
 		utils.ResponseJSON(w, res, http.StatusCreated)
 		return
@@ -106,14 +122,17 @@ func PostReqEmails(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func sendExecute(from string, pesan string) {
-	// var data models.Req
+func sendBulkEmails(bulkEmails []string, message string) {
+	for _, email := range bulkEmails {
+		sendSingleEmail(email, message)
+	}
+}
 
-	to := []string{from, "another.email@gmail.com"}
+func sendSingleEmail(from string, pesan string) {
+	to := []string{from}
 	cc := []string{"testing@gmail.com"}
 	subject := "Test mail"
 	message := pesan
-
 	sendMail(to, cc, subject, message)
 
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"rProject/config"
 	"rProject/models"
+	"strings"
 	"time"
 )
 
@@ -71,13 +72,16 @@ func Insert(ctx context.Context, post models.Req) error {
 		log.Fatal("Can't connect to MySQL", err)
 	}
 
-	queryText := fmt.Sprintf("INSERT INTO %v (email, text, created_at, updated_at) values('%v','%v','%v','%v')", table,
-		post.Email,
-		post.Text,
-		time.Now().Format(layoutDateTime),
-		time.Now().Format(layoutDateTime))
+	entries := strings.Split(post.Email, ",")
+	for _, email := range entries {
+		queryText := fmt.Sprintf("INSERT INTO %v (email, text, created_at, updated_at) values('%v','%v','%v','%v')", table,
+			email,
+			post.Text,
+			time.Now().Format(layoutDateTime),
+			time.Now().Format(layoutDateTime))
 
-	_, err = db.ExecContext(ctx, queryText)
+		_, err = db.ExecContext(ctx, queryText)
+	}
 
 	if err != nil {
 		return err
