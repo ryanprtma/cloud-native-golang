@@ -1,25 +1,33 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"io/ioutil"
+	"time"
+
 	"fmt"
 	"log"
 	"net/http"
-	"net/smtp"
+
 	"rProject/config"
 	"rProject/utils"
 
 	"encoding/json"
+	"net/smtp"
 	"rProject/models"
 	"rProject/req"
 	"strings"
 )
 
-const CONFIG_SMTP_HOST = "smtp.mailtrap.io"
-const CONFIG_SMTP_PORT = 587
-const CONFIG_SENDER_NAME = "test <testSend@gmail.com>"
-const CONFIG_AUTH_EMAIL = "4ddb3336739147"
-const CONFIG_AUTH_PASSWORD = "2c24a017a3e258"
+type Mail struct {
+	Sender      string
+	To          []string
+	Subject     string
+	Body        string
+	Attachments string
+}
 
 func main() {
 
@@ -34,7 +42,7 @@ func main() {
 		panic(eb.Error())
 	}
 
-	fmt.Println("Success Connect to database")
+	fmt.Println("Server Run on :7000")
 
 	http.HandleFunc("/reqemails", GetReqEmails)
 	http.HandleFunc("/reqemails/create", PostReqEmails)
@@ -64,7 +72,7 @@ func GetReqEmails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Tidak di ijinkan", http.StatusNotFound)
-	return
+	// return
 }
 
 func PostReqEmails(w http.ResponseWriter, r *http.Request) {
@@ -90,14 +98,6 @@ func PostReqEmails(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// emails := map[string]string{
-		// 	"email1": post.Email,
-		// 	"emailx": "testx@gmail.com",
-		// 	"emaily": "testy@gmail.com",
-		// }
-
-		// emailEntries(post.Email)
-
 		var emailsSlice []string
 		entries := strings.Split(post.Email, ",")
 		for _, email := range entries {
@@ -110,8 +110,6 @@ func PostReqEmails(w http.ResponseWriter, r *http.Request) {
 			"text":   post.Text,
 		}
 
-		// go sendExecute(post.Email, post.Text)
-
 		go sendBulkEmails(emailsSlice, post.Text)
 
 		utils.ResponseJSON(w, res, http.StatusCreated)
@@ -119,33 +117,97 @@ func PostReqEmails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Tidak di ijinkan", http.StatusMethodNotAllowed)
-	return
+	// return
 }
 
 func sendBulkEmails(bulkEmails []string, message string) {
-	for _, email := range bulkEmails {
-		sendSingleEmail(email, message)
+	for i, email := range bulkEmails {
+		SendEmailWithAttachment(email, message)
+		if i == 3 {
+			time.Sleep(60 * time.Second)
+			continue
+		}
+		// sendemail.SendSingleEmail(email, message)
 	}
 }
 
-func sendSingleEmail(from string, pesan string) {
-	to := []string{from}
-	cc := []string{"testing@gmail.com"}
-	subject := "Test mail"
-	message := pesan
-	sendMail(to, cc, subject, message)
+func SendEmailWithAttachment(email string, message string) {
+
+	namaFile := Mail{}
+	namaFile.Attachments = "main.go"
+
+	sender := "test@example.com"
+
+	to := []string{
+		email,
+	}
+
+	user := "4ddb3336739147"
+	password := "2c24a017a3e258"
+
+	subject := "testing mail with attachment"
+	body := message
+
+	request := Mail{
+		Sender:  sender,
+		To:      to,
+		Subject: subject,
+		Body:    body,
+	}
+
+	addr := "smtp.mailtrap.io:2525"
+	host := "smtp.mailtrap.io"
+
+	data := BuildMail(request, namaFile.Attachments)
+	auth := smtp.PlainAuth("", user, password, host)
+	err := smtp.SendMail(addr, auth, sender, to, data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Email sent successfully")
 
 }
 
-func sendMail(to []string, cc []string, subject, message string) {
-	body := "From: " + CONFIG_SENDER_NAME + "\n" +
-		"To: " + strings.Join(to, ", ") + "\n" +
-		"Cc: " + strings.Join(cc, ", ") + "\n" +
-		"Subject: " + subject + "\n\n" +
-		message
+func BuildMail(mail Mail, namafile string) []byte {
 
-	auth := smtp.PlainAuth("", CONFIG_AUTH_EMAIL, CONFIG_AUTH_PASSWORD, CONFIG_SMTP_HOST)
-	smtpAddr := fmt.Sprintf("%s:%d", CONFIG_SMTP_HOST, CONFIG_SMTP_PORT)
+	var buf bytes.Buffer
 
-	smtp.SendMail(smtpAddr, auth, CONFIG_AUTH_EMAIL, append(to, cc...), []byte(body))
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", mail.Sender))
+	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(mail.To, ";")))
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", mail.Subject))
+
+	boundary := "my-boundary-779"
+	buf.WriteString("MIME-Version: 1.0\r\n")
+	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\n",
+		boundary))
+
+	buf.WriteString(fmt.Sprintf("\r\n--%s\r\n", boundary))
+	buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n")
+	buf.WriteString(fmt.Sprintf("\r\n%s", mail.Body))
+	data := readFile(namafile)
+
+	b := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
+	buf.WriteString(fmt.Sprintf("\r\n--%s\r\n", boundary))
+	buf.WriteString(fmt.Sprintf("Content-Type: %s\n", http.DetectContentType(b)))
+	buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+	buf.WriteString("Content-Disposition: attachment; filename=" + namafile + "\r\n")
+	buf.WriteString("Content-ID: <" + namafile + ">\r\n\r\n")
+
+	base64.StdEncoding.Encode(b, data)
+	buf.Write(b)
+	buf.WriteString(fmt.Sprintf("\r\n--%s", boundary))
+
+	buf.WriteString("--")
+
+	return buf.Bytes()
+}
+
+func readFile(fileName string) []byte {
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return data
 }
