@@ -9,12 +9,14 @@ import (
 
 const (
 	username string = "root"
-	password string = ""
+	password string = "root"
 	database string = "models"
+	host     string = "tcp(app-mysql:3308)"
+	// host string = "tcp(127.0.0.1:3306)"
 )
 
 var (
-	dsn = fmt.Sprintf("%v:%v@/%v", username, password, database)
+	dsn = fmt.Sprintf("%v:%v@%v/%v", username, password, host, database)
 )
 
 // HubToMySQL

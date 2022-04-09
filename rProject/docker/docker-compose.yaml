@@ -1,0 +1,41 @@
+version: '3.3'
+services:
+  db:
+    image: mysql:latest
+    container_name: db
+    build: ./mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      #- MYSQL_USER=root
+      #- MYSQL_PASSWORD=root
+      #- MYSQL_DATABASE=models
+    volumes:
+      #- /var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+    expose:
+      - "3306"  
+  
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    restart: always
+    ports: 
+      - "9090:90"
+    environment:
+      - PMA_HOST=db 
+
+  masg-backend:
+    build: .
+    container_name: be-services
+    working_dir: /app
+    volumes:
+      - "./backend:/app"
+    command: ["go run", "./main.go"]
+    ports:
+      - "8080:80"
+    depends_on:
+      - db

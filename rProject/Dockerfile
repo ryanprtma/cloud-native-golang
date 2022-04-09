@@ -6,6 +6,6 @@ COPY . .
 
 RUN go build -o message-broker
 
-EXPOSE 8080
+EXPOSE 9000
 
 CMD ./message-broker

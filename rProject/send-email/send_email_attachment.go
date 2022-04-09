@@ -3,7 +3,6 @@ package sendemail
 import (
 	"bytes"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,7 +22,7 @@ type Mail struct {
 func SendEmailWithAttachment(email string, message string) {
 
 	namaFile := Mail{}
-	namaFile.Attachments = "./send_email.go"
+	namaFile.Attachments = "send_email.go"
 
 	sender := "test@example.com"
 
@@ -93,10 +92,8 @@ func BuildMail(mail Mail, namafile string) []byte {
 }
 
 func readFile(fileName string) []byte {
-	fptr := flag.String("fpath", fileName, "file path to read from")
-	flag.Parse()
-
-	data, err := ioutil.ReadFile(*fptr)
+	filePath := "./send-email/" + fileName
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Panic(err)
 	}
