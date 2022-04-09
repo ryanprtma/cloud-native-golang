@@ -1,0 +1,61 @@
+definitions:
+  helper.Meta:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  helper.Response:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/helper.Meta'
+    type: object
+  user.CheckEmailInput:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/email_checkers:
+    post:
+      consumes:
+      - application/json
+      description: check email availablelity
+      parameters:
+      - description: user email
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.CheckEmailInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/helper.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.Response'
+      summary: check email
+      tags:
+      - user
+swagger: "2.0"

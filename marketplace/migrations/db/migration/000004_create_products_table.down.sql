@@ -1,0 +1,3 @@
+ALTER TABLE products DROP CONSTRAINT merchant_id;
+
+DROP TABLE IF EXISTS products;
