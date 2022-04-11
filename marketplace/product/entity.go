@@ -18,5 +18,5 @@ type Products struct {
 	Merchant   role.Merchant
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
-	DeletedAt  time.Time
+	// DeletedAt  time.Time
 }
