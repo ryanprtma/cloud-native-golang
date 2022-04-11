@@ -1,30 +1,29 @@
-version: '3.3'
+version: '3'
 services:
-  db:
+  app-mysql:
     image: mysql
-    restart: always
-    container_name: db
     command: --default-authentication-plugin=mysql_native_password
-    environment:
-      MYSQL_DATABASE: 'market_place_2'
-      # You can use whatever password you like
-      MYSQL_PASSWORD: 'root'
-      # Password for root access
-      MYSQL_ROOT_PASSWORD: 'root'
-      
+    restart: always
     ports:
-      # <Port exposed> : < MySQL Port running inside container>
-      - '3306:3306'
-    expose:
-      # Opens port 3306 on the container
-      - '3306'
-      # Where our data will be persisted
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=market_place_2
+      - MYSQL_ROOT_HOST= %
     volumes:
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-  marketplace-backend:
-    build: .
-    container_name: market-place-service
+  app-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
+    environment:
+      - DATABASE_HOST=app-mysql
+      - DATABASE_PORT=3308
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=root
+      - DATABASE_NAME=market_place_2
+    restart: always
     depends_on:
-      - db
+      - app-mysql
