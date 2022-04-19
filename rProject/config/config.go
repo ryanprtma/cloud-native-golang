@@ -12,7 +12,7 @@ const (
 	password string = "root"
 	database string = "models"
 	host     string = "tcp(app-mysql:3308)"
-	// host string = "tcp(127.0.0.1:3306)"
+	// host string = "tcp(127.0.0.1:3306)
 )
 
 var (
