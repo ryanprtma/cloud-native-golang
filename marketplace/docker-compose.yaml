@@ -12,6 +12,11 @@ services:
       - MYSQL_ROOT_HOST= %
     volumes:
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+  app-redis:
+    image: redis:6-alpine
+    ports:
+      - 6379:6379
+    restart: always
   app-backend:
     build:
       context: .
@@ -20,10 +25,13 @@ services:
       - 8080:8080
     environment:
       - DATABASE_HOST=app-mysql
-      - DATABASE_PORT=3308
+      - DATABASE_PORT=3306
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=market_place_2
+      - REDIS_HOST=app-redis
+      - GIN_MODE=release
     restart: always
     depends_on:
       - app-mysql
+      - app-redis
