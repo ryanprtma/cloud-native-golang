@@ -9,6 +9,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=models
+      - MYSQL_ROOT_HOST=%
     volumes:
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
   app-backend:
@@ -23,6 +24,7 @@ services:
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=models
+      - GIN_MODE=release
     restart: always
     depends_on:
       - app-mysql
